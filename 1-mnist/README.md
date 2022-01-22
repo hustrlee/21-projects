@@ -1,51 +1,70 @@
-# MNIST 机器学习入门
+# MNIST 手写体数字识别
 
+MNIST 是经典的机器学习/深度学习项目，我们用多种方案来完成该项目。对“经典机器学习”、“keras 深度学习”、“Tensorflow 深度学习”做一个初步的了解。
 
+我们使用以下的方案来完成该项目：
 
-## MNIST 数据集
+- 基于 sklearn-SVM 的经典机器学习方案
+- 基于 sklearn-SGD 的经典机器学习方案
+- 基于 keras-Softmax 的经典机器学习方案
+- 基于 keras-DNN 的全连接深度学习方案
+- 基于 Tensorflow-CNN 的卷积网络深度学习方案
 
-Tensorflow Datasets 提供了一系列可以和 Tensorflow 配合使用的数据集。它负责下载和准备数据，以及构建 `tf.data.Dataset`。
+## 基于 sklearn-SVM 的经典机器学习方案
 
-### 安装 Tensorflow Datasets
+- 根据[“选择适合的估算器”](https://scikit-learn.org.cn/view/858.html)的官方指导：小于 10 万个样本的分类器，可以使用 `LinearSVC`。
+- 随着训练图片的增加，需要大幅度增加 `max_iter`（最大迭代次数），否则有可能不收敛。
+- 随着训练图片的增加，训练所需的时间也大幅度增加。
+- `LinearSVC` 不支持多线程，也就无法进行训练加速。
+- 本实验选取了 10000 张训练图片，得到以下的结果：
 
 ```
-pip install tensorflow-datasets
+训练开始： 2022-01-22 21:44:35
+训练耗时： 0:10:19.156389
+acc: 0.8667
+              precision    recall  f1-score   support
+
+           0       0.89      0.96      0.93       980
+           1       0.93      0.97      0.95      1135
+           2       0.89      0.82      0.85      1032
+           3       0.84      0.84      0.84      1010
+           4       0.85      0.88      0.87       982
+           5       0.81      0.78      0.80       892
+           6       0.90      0.91      0.91       958
+           7       0.86      0.88      0.87      1028
+           8       0.81      0.79      0.80       974
+           9       0.86      0.81      0.83      1009
+
+    accuracy                           0.87     10000
+   macro avg       0.86      0.86      0.86     10000
+weighted avg       0.87      0.87      0.87     10000
 ```
 
-### 引用 Tensorflow Datasets
+## 基于 sklearn-SGD 的经典机器学习方案
 
-```python
-import tensorflow_datasets as tfds
+- 根据[“选择适合的估算器”](https://scikit-learn.org.cn/view/858.html)的官方指导：大于 10 万个样本的分类器，可以使用 `SGDClassifier`。
+- `SGDClassifier` 的训练速度远高于同等规模的 `LinearSVC`。
+- `SGDClassifier` 可以开启多线程进行训练加速。
+- 本实验使用了全部 60000 张训练图片，得到以下的结果：
+
 ```
+训练开始： 2022-01-22 22:04:14
+训练耗时： 0:01:14.662422
+acc: 0.8985
+              precision    recall  f1-score   support
 
-### 列出可用的数据集
+           0       0.96      0.96      0.96       980
+           1       0.98      0.96      0.97      1135
+           2       0.94      0.87      0.90      1032
+           3       0.92      0.87      0.90      1010
+           4       0.94      0.90      0.92       982
+           5       0.91      0.81      0.86       892
+           6       0.94      0.92      0.93       958
+           7       0.95      0.90      0.93      1028
+           8       0.63      0.93      0.75       974
+           9       0.92      0.85      0.88      1009
 
-```python
-tfds.list_builders()
+    accuracy                           0.90     10000
+   macro avg       0.91      0.90      0.90     10000
+weighted avg       0.91      0.90      0.90     10000
 ```
-
-> - Tensorflow 官方在不断补充 Datasets 中的数据集，例如：最近添加了 `covid19` 新冠数据集。
-> - `tensorflow_datasets` 需从 Google 获取数据，因此需要科学上网。
-
-### `tfds.load()`：一行代码获取数据集
-
-`tfds.load()` 是构建并加载 `tf.data.Dataset` 最简单的方式。
-
-> `tf.data.Datase` 是构建输入流水线的标准 Tensorflow 接口。
-
-- `tads.load()` 将下载并准备好数据集，一旦数据集下载成功，后续的 `load` 命令不会重新下载，可以重复使用准备好的数据。
-
-- 可以指定 `download=False` 来阻止立即下载数据集。
-- 可以指定 `data_dir=` 来自定义数据保存/加载的路径，默认是：`~/tensorflow_datasets/`。
-
-```python
-mnist_train = tfds.load(name="mnist", split="train")
-assert isinstance(mnist_train, tf.data.Dataset)
-print(mnist_train)
-```
-
-### 特征字典
-
-所有 [`tfds`](https://www.tensorflow.org/datasets/api_docs/python/tfds?hl=zh-cn) 数据集都包含将特征名称映射到 Tensor 值的特征字典。 典型的数据集（如 MNIST）将具有2个键：`"image"` 和 `"label"`。 下面我们看一个例子。
-
-> 注意：在图模式（graph mode）下，请参阅 [tf.data 指南](https://www.tensorflow.org/guide/data) 以了解如何在 [`tf.data.Dataset`](https://www.tensorflow.org/api_docs/python/tf/data/Dataset?hl=zh-cn) 上进行迭代。
